@@ -1,6 +1,5 @@
 package com.ronhalder.rgbkeyboard
 
-import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -22,16 +21,12 @@ class RgbKeyboardService : InputMethodService() {
         private data class Key(val label: String, val value: String = label, val weight: Float = 1f)
         private data class Hit(val key: Key, val rect: RectF)
         private var hits: List<Hit> = emptyList()
-        private val prefs by lazy { getSharedPreferences("rgb_keyboard", Context.MODE_PRIVATE) }
 
         private fun rows(): List<List<Key>> {
-            val letters = if (shifted) listOf("QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM")
-                else listOf("qwertyuiop", "asdfghjkl", "zxcvbnm")
-            val top = if (symbols) "1234567890" else ""
             return if (symbols) listOf(
-                top.map { Key(it.toString()) },
-                listOf("@" ,"#", "$", "%", "&", "-", "+", "(", ")", "/").map { Key(it) },
-                listOf(Key("=\\\\<", " <"), Key("*"), Key("\""), Key("'"), Key(":"), Key(";"), Key("!"), Key("?"), Key("⌫", "⌫", 1.3f)),
+                "1234567890".map { Key(it.toString()) },
+                listOf("@", "#", "\$", "%", "&", "-", "+", "(", ")", "/").map { Key(it) },
+                listOf(Key("<"), Key("*"), Key("\""), Key("'"), Key(":"), Key(";"), Key("!"), Key("?"), Key("⌫", "⌫", 1.3f)),
                 listOf(Key("ABC", "symbols"), Key(",", ","), Key("😊", "emoji"), Key("English", "space", 4.2f), Key(".", "."), Key("↵", "enter", 1.3f))
             ) else listOf(
                 "qwertyuiop".map { Key(if (shifted) it.uppercase() else it.toString()) },
@@ -57,7 +52,7 @@ class RgbKeyboardService : InputMethodService() {
                 keys.forEach { key ->
                     val keyWidth = available * key.weight / totalWeight
                     val rect = RectF(x, y, x + keyWidth, y + rowHeight)
-                    val hue = (phase + r * 27f + x / max(1f, width) * 130f) % 360f
+                    val hue = (phase + r * 27f + x / max(1f, width.toFloat()) * 130f) % 360f
                     val rgb = Color.HSVToColor(floatArrayOf(hue, .88f, 1f))
                     paint.style = Paint.Style.STROKE
                     paint.strokeWidth = dp(2f)
