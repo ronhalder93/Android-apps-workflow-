@@ -10,6 +10,9 @@ import android.view.View
 import android.view.inputmethod.InputConnection
 import kotlin.math.max
 
+private data class KeyboardKey(val label: String, val value: String = label, val weight: Float = 1f)
+private data class KeyboardHit(val key: KeyboardKey, val rect: RectF)
+
 class RgbKeyboardService : InputMethodService() {
     override fun onCreateInputView(): View = RgbKeysView()
 
@@ -18,21 +21,19 @@ class RgbKeyboardService : InputMethodService() {
         private var phase = 0f
         private var shifted = false
         private var symbols = false
-        private data class Key(val label: String, val value: String = label, val weight: Float = 1f)
-        private data class Hit(val key: Key, val rect: RectF)
-        private var hits: List<Hit> = emptyList()
+        private var hits: List<KeyboardHit> = emptyList()
 
-        private fun rows(): List<List<Key>> {
+        private fun rows(): List<List<KeyboardKey>> {
             return if (symbols) listOf(
-                "1234567890".map { Key(it.toString()) },
-                listOf("@", "#", "\$", "%", "&", "-", "+", "(", ")", "/").map { Key(it) },
-                listOf(Key("<"), Key("*"), Key("\""), Key("'"), Key(":"), Key(";"), Key("!"), Key("?"), Key("⌫", "⌫", 1.3f)),
-                listOf(Key("ABC", "symbols"), Key(",", ","), Key("😊", "emoji"), Key("English", "space", 4.2f), Key(".", "."), Key("↵", "enter", 1.3f))
+                "1234567890".map { KeyboardKey(it.toString()) },
+                listOf("@", "#", "\$", "%", "&", "-", "+", "(", ")", "/").map { KeyboardKey(it) },
+                listOf(KeyboardKey("<"), KeyboardKey("*"), KeyboardKey("\""), KeyboardKey("'"), KeyboardKey(":"), KeyboardKey(";"), KeyboardKey("!"), KeyboardKey("?"), KeyboardKey("⌫", "⌫", 1.3f)),
+                listOf(KeyboardKey("ABC", "symbols"), KeyboardKey(",", ","), KeyboardKey("😊", "emoji"), KeyboardKey("English", "space", 4.2f), KeyboardKey(".", "."), KeyboardKey("↵", "enter", 1.3f))
             ) else listOf(
-                "qwertyuiop".map { Key(if (shifted) it.uppercase() else it.toString()) },
-                "asdfghjkl".map { Key(if (shifted) it.uppercase() else it.toString()) },
-                listOf(Key("⇧", "shift", 1.35f)) + "zxcvbnm".map { Key(if (shifted) it.uppercase() else it.toString()) } + Key("⌫", "⌫", 1.35f),
-                listOf(Key("?123", "symbols", 1.4f), Key(",", ","), Key("😊", "emoji"), Key("English", "space", 4.4f), Key(".", "."), Key("↵", "enter", 1.4f))
+                "qwertyuiop".map { KeyboardKey(if (shifted) it.uppercase() else it.toString()) },
+                "asdfghjkl".map { KeyboardKey(if (shifted) it.uppercase() else it.toString()) },
+                listOf(KeyboardKey("⇧", "shift", 1.35f)) + "zxcvbnm".map { KeyboardKey(if (shifted) it.uppercase() else it.toString()) } + KeyboardKey("⌫", "⌫", 1.35f),
+                listOf(KeyboardKey("?123", "symbols", 1.4f), KeyboardKey(",", ","), KeyboardKey("😊", "emoji"), KeyboardKey("English", "space", 4.4f), KeyboardKey(".", "."), KeyboardKey("↵", "enter", 1.4f))
             )
         }
 
@@ -43,7 +44,7 @@ class RgbKeyboardService : InputMethodService() {
             val gap = dp(5f)
             val rowGap = dp(7f)
             val rowHeight = (height - rowGap * (layout.size + 1)) / layout.size.toFloat()
-            val newHits = mutableListOf<Hit>()
+            val newHits = mutableListOf<KeyboardHit>()
             layout.forEachIndexed { r, keys ->
                 val totalWeight = keys.sumOf { it.weight.toDouble() }.toFloat()
                 val available = width - gap * (keys.size + 1)
@@ -72,7 +73,7 @@ class RgbKeyboardService : InputMethodService() {
                     }
                     val label = if (key.value == "space") "English (US)" else key.label
                     canvas.drawText(label, rect.centerX(), rect.centerY() - (paint.ascent() + paint.descent()) / 2f, paint)
-                    newHits.add(Hit(key, rect))
+                    newHits.add(KeyboardHit(key, rect))
                     x += keyWidth + gap
                 }
             }
@@ -83,8 +84,7 @@ class RgbKeyboardService : InputMethodService() {
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
             if (event.action != MotionEvent.ACTION_UP) return true
-            val hit = hits.firstOrNull { it.rect.contains(event.x, event.y) } ?: return true
-            val key = hit.key
+            val key = hits.firstOrNull { it.rect.contains(event.x, event.y) }?.key ?: return true
             val ic: InputConnection = currentInputConnection ?: return true
             when (key.value) {
                 "⌫" -> ic.deleteSurroundingText(1, 0)
