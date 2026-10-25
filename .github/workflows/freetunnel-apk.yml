@@ -26,8 +26,14 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          packages: "platforms;android-35,build-tools;35.0.0"
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Download ARM64 tunnel engine
         run: |
@@ -38,9 +44,7 @@ jobs:
           test -s FreeTunnel/app/libs/teapod-tun2socks.aar
 
       - name: Build debug APK
-        run: |
-          cd FreeTunnel
-          gradle assembleDebug --no-daemon --stacktrace
+        run: gradle -p FreeTunnel assembleDebug --no-daemon --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
