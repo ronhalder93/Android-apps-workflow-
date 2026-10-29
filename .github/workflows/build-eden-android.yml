@@ -49,6 +49,12 @@ jobs:
           echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
           test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" || find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -print
 
+      - name: Install native build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools
+          command -v glslangValidator
+
       - name: Install Android NDK and CMake
         run: |
           yes | sdkmanager --licenses >/dev/null || true
