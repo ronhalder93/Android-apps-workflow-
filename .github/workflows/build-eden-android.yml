@@ -2,6 +2,9 @@ name: Build Eden Android (source)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - eden-android-build
 
 permissions:
   contents: read
