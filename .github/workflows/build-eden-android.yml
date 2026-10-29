@@ -1,0 +1,52 @@
+name: Build Eden Android (source)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Install Eden source (including submodules)
+        run: git clone --recursive https://git.eden-emu.dev/eden-emu/eden.git eden
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK and CMake
+        run: |
+          sdkmanager --install "ndk;27.2.12479018" "cmake;3.22.1" "platform-tools"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
+
+      - name: Verify Gradle project
+        working-directory: eden/src/android
+        run: |
+          test -f gradlew
+          chmod +x gradlew
+          ./gradlew tasks --all
+
+      - name: Build Android APK
+        working-directory: eden/src/android
+        run: ./gradlew assembleRelWithDebInfo --no-daemon --stacktrace
+
+      - name: Upload generated APKs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eden-android-build-output
+          path: |
+            eden/src/android/**/*.apk
+            eden/src/android/**/build/outputs/**
+          if-no-files-found: warn
+          retention-days: 7
