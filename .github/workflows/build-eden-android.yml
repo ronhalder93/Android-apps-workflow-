@@ -17,6 +17,11 @@ jobs:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools
+
       - name: Install Eden source (shallow clone with retries)
         shell: bash
         run: |
