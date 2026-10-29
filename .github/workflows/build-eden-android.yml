@@ -13,6 +13,9 @@ jobs:
   build-android:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - name: Install Eden source (including submodules)
         run: git clone --recursive https://git.eden-emu.dev/eden-emu/eden.git eden
@@ -23,13 +26,16 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Configure Android SDK environment
+        run: |
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" || find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -print
 
       - name: Install Android NDK and CMake
         run: |
+          yes | sdkmanager --licenses >/dev/null || true
           sdkmanager --install "ndk;27.2.12479018" "cmake;3.22.1" "platform-tools"
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
 
       - name: Check upstream Android build script
